@@ -1,26 +1,24 @@
 package br.mackenzie;
 
-import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Game;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class Main implements ApplicationListener {
+public class Main extends Game {
     @Override
     public void create() {
-        // Prepare your application here.
+        this.setScreen(new MenuPrincipal());
     }
 
     @Override
     public void resize(int width, int height) {
-        // If the window is minimized on a desktop (LWJGL3) platform, width and height are 0, which causes problems.
-        // In that case, we don't resize anything, and wait for the window to be a normal size before updating.
         if(width <= 0 || height <= 0) return;
 
-        // Resize your application here. The parameters represent the new window size.
+        super.resize(width, height);
     }
 
     @Override
     public void render() {
-        // Draw your application here.
+        super.render();
     }
 
     @Override
