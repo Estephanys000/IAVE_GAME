@@ -2,17 +2,17 @@ package br.mackenzie;
 
 import com.badlogic.gdx.Game;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/** Ponto de entrada da aplicação. Gerencia a troca de telas. */
 public class Main extends Game {
+
     @Override
     public void create() {
-        this.setScreen(new MenuPrincipal());
+        this.setScreen(new MenuPrincipal(this));
     }
 
     @Override
     public void resize(int width, int height) {
-        if(width <= 0 || height <= 0) return;
-
+        if (width <= 0 || height <= 0) return;
         super.resize(width, height);
     }
 
@@ -22,17 +22,11 @@ public class Main extends Game {
     }
 
     @Override
-    public void pause() {
-        // Invoked when your application is paused.
-    }
+    public void pause() { }
 
     @Override
-    public void resume() {
-        // Invoked when your application is resumed after pause.
-    }
+    public void resume() { }
 
     @Override
-    public void dispose() {
-        // Destroy application's resources here.
-    }
+    public void dispose() { }
 }
