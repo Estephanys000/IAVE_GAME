@@ -29,9 +29,9 @@ public class Fase3 extends ScreenAdapter {
         WIN
     }
 
-    private static final int MAX_LIVES = 6;
-    private static final int SCORE_VITORIA = 50;
-    private static final float VELOCIDADE_FASE3 = 4.0f;
+    private static final int MAX_LIVES = 2;
+    private static final int SCORE_VITORIA = 30;
+    private static final float VELOCIDADE_FASE3 = 4.5f;
 
     public static final float LEFT_WALL = 1.5f;
     public static final float RIGHT_WALL = 6.5f;
@@ -62,7 +62,7 @@ public class Fase3 extends ScreenAdapter {
 
     private float spawnTimer;
     private int score = 0;
-    private int lives = 3;
+    private int lives = 1;
     private float bgNearY = 0f;
 
     private Sound dropSound;

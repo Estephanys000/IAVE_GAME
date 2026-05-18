@@ -29,8 +29,8 @@ public class Fase2 extends ScreenAdapter {
         WIN
     }
 
-    private static final int MAX_LIVES = 5;
-    private static final int SCORE_VITORIA = 30;
+    private static final int MAX_LIVES = 2;
+    private static final int SCORE_VITORIA = 25;
     private static final float VELOCIDADE_FASE2 = 3.0f;
 
     public static final float LEFT_WALL = 1.5f;

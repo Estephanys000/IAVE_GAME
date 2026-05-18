@@ -157,7 +157,7 @@ public class MenuPrincipal implements Screen {
                 if (jogo != null) {
                     trocandoTela = true;
                     Gdx.input.setInputProcessor(null);
-                    jogo.setScreen(new Levels(jogo)); // <--- AQUI ESTÁ A CORREÇÃO
+                    jogo.setScreen(new Levels(jogo));
                 }
                 break;
 

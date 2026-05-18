@@ -31,7 +31,7 @@ public class Fase1 extends ScreenAdapter {
     }
 
     private static final int MAX_LIVES = 3;
-    private static final int SCORE_VITORIA = 40;
+    private static final int SCORE_VITORIA = 20;
 
     public static final float LEFT_WALL  = 1.5f;
     public static final float RIGHT_WALL = 6.5f;
@@ -461,12 +461,12 @@ public class Fase1 extends ScreenAdapter {
             spawnObstaculo(x);
         }
 
-        if (MathUtils.randomBoolean(0.1f)) {
+        if (MathUtils.randomBoolean(0.08f)) {
             float px = MathUtils.random(LEFT_WALL, RIGHT_WALL - 0.8f);
             activePowerUps.add(new PowerUp(powerTex, px, 5f));
         }
 
-        if (MathUtils.randomBoolean(0.01f)) {
+        if (MathUtils.randomBoolean(0.07f)) {
             float sx = MathUtils.random(LEFT_WALL, RIGHT_WALL - 0.8f);
             activeShields.add(new Shield(shieldTex, sx, 5f));
         }

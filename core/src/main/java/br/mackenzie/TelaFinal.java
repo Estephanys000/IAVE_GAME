@@ -54,7 +54,7 @@ public class TelaFinal implements Screen {
 
         this.jogo = jogo;
 
-        // ✅ usa batch do Main (correto LibGDX)
+        // usa batch do Main (correto LibGDX)
         this.batch = jogo.batch;
 
         this.totalPedaladas = totalPedaladas;
@@ -63,7 +63,7 @@ public class TelaFinal implements Screen {
         this.consistencia = consistencia;
         this.tempoTotal = tempoTotal;
 
-        // 🌱 cálculos do jogo
+        // cálculos do jogo
         this.arvores = Math.max(1, (int)(totalPedaladas * 0.5f));
         this.energia = totalPedaladas * 12f;
         this.co2 = totalPedaladas * 1.2f;
@@ -135,15 +135,15 @@ public class TelaFinal implements Screen {
         font.draw(batch, "RPM Máximo: " + rpmMaximo, 200, 400);
         font.draw(batch, "Consistência: " + (consistencia * 100) + "%", 200, 370);
 
-        // 🌱 impacto ambiental
+        // impacto ambiental
         font.draw(batch, "Árvores: " + arvores, 650, 460);
         font.draw(batch, "Energia: " + energia + " Wh", 650, 430);
         font.draw(batch, "CO2 evitado: " + co2, 650, 400);
 
-        // ⏱ tempo
+        // tempo
         font.draw(batch, "Tempo: " + tempoTotal + "s", 650, 370);
 
-        // 🔙 instrução
+        // instrução
         font.draw(batch, "ENTER ou ESC para voltar", 420, 200);
 
         batch.end();
