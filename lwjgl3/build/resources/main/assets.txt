@@ -1,0 +1,16 @@
+.gitkeep
+background_near.png
+drop.mp3
+drop.png
+game_over.png
+heart.png
+inimigo3.png
+inimigo_grande.png
+inimigo_pequeno.png
+music.mp3
+player.png
+player_left.png
+player_right.png
+player_shield.png
+shield.png
+start_game.png

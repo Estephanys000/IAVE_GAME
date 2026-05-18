@@ -21,62 +21,41 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-/**
- * Tela do Menu Principal do jogo.
- *
- * Suporta navegação híbrida:
- *  - Mouse:   hover muda a seleção; clique executa a ação.
- *  - Teclado: Seta Cima/Baixo navegam; Espaço/Enter confirmam.
- */
 public class MenuPrincipal implements Screen {
 
-    private static final float MUNDO_LARGURA   = 1280f;
-    private static final float MUNDO_ALTURA    = 720f;
-    private static final float BOTAO_LARGURA   = 260f;
-    private static final float BOTAO_ALTURA    = 60f;
-    private static final float BOTAO_ESPACO    = 16f;
-    private static final float TABELA_MARGEM_ESQ = 60f;
+    private static final float MUNDO_LARGURA = 1280f;
+    private static final float MUNDO_ALTURA = 720f;
+    private static final float BOTAO_LARGURA = 260f;
+    private static final float BOTAO_ALTURA = 60f;
+    private static final float BOTAO_ESPACO = 16f;
+    private static final float TABELA_MARGEM_ESQ = 260f;
     private static final float TABELA_MARGEM_BOT = 60f;
 
-    private final Main        jogo;
+    // CORREÇÃO: Tipado diretamente como 'Main' para evitar problemas de polimorfismo
+    private final Main jogo;
     private final SpriteBatch batch;
 
-    private Texture    texFundo;
+    private Texture texFundo;
     private BitmapFont fonte;
 
     private Viewport viewport;
-    private Stage    stage;
-    private Table    tabela;
+    private Stage stage;
+    private Table tabela;
 
     private Array<TextButton> botoes;
     private int indiceSelecionado = 0;
 
-    // -----------------------------------------------------------------------
-    // Construtores
-    // -----------------------------------------------------------------------
+    // Flag de segurança para evitar cliques múltiplos/concorrentes que quebram o OpenGL
+    private boolean trocandoTela = false;
 
     public MenuPrincipal(Main jogo) {
-        this.jogo  = jogo;
-        this.batch = new SpriteBatch();
+        this.jogo = jogo;
+        this.batch = jogo.batch;
     }
-
-    /** Mantido para compatibilidade — sem navegação para fases. */
-    public MenuPrincipal(SpriteBatch batch) {
-        this.jogo  = null;
-        this.batch = batch;
-    }
-
-    public MenuPrincipal() {
-        this.jogo  = null;
-        this.batch = new SpriteBatch();
-    }
-
-    // -----------------------------------------------------------------------
-    // Screen — ciclo de vida
-    // -----------------------------------------------------------------------
 
     @Override
     public void show() {
+        trocandoTela = false;
         carregarRecursos();
         configurarStage();
         criarBotoes();
@@ -90,43 +69,47 @@ public class MenuPrincipal implements Screen {
 
         fonte = new BitmapFont(Gdx.files.internal("pixel_font.fnt"));
         fonte.getRegion().getTexture().setFilter(
-            Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+                Texture.TextureFilter.Nearest,
+                Texture.TextureFilter.Nearest
+        );
+
         fonte.getData().setScale(1.5f);
     }
 
     private void configurarStage() {
         OrthographicCamera camera = new OrthographicCamera();
         viewport = new FitViewport(MUNDO_LARGURA, MUNDO_ALTURA, camera);
-        stage    = new Stage(viewport, batch);
+        stage = new Stage(viewport, batch);
     }
 
     private void criarBotoes() {
         botoes = new Array<>();
 
         TextButtonStyle estilo = new TextButtonStyle();
-        estilo.font      = fonte;
+        estilo.font = fonte;
         estilo.fontColor = Color.WHITE;
 
-        TextButton btnNovoJogo  = new TextButton("Novo Jogo",  estilo);
-        TextButton btnContinuar = new TextButton("Continuar",  estilo);
-        TextButton btnSair      = new TextButton("Sair",       estilo);
+        TextButton btnNovoJogo = new TextButton("Novo Jogo", estilo);
+        TextButton btnLevels = new TextButton("Levels", estilo);
+        TextButton btnSair = new TextButton("Sair", estilo);
 
         botoes.add(btnNovoJogo);
-        botoes.add(btnContinuar);
+        botoes.add(btnLevels);
         botoes.add(btnSair);
 
-        adicionarListeners(btnNovoJogo,  0);
-        adicionarListeners(btnContinuar, 1);
-        adicionarListeners(btnSair,      2);
+        adicionarListeners(btnNovoJogo, 0);
+        adicionarListeners(btnLevels, 1);
+        adicionarListeners(btnSair, 2);
 
         tabela = new Table();
         tabela.setFillParent(true);
         tabela.bottom().left();
+
         tabela.pad(TABELA_MARGEM_BOT, TABELA_MARGEM_ESQ, TABELA_MARGEM_BOT, 0);
 
-        tabela.add(btnNovoJogo) .size(BOTAO_LARGURA, BOTAO_ALTURA).left().row();
-        tabela.add(btnContinuar).size(BOTAO_LARGURA, BOTAO_ALTURA).left().padTop(BOTAO_ESPACO).row();
-        tabela.add(btnSair)     .size(BOTAO_LARGURA, BOTAO_ALTURA).left().padTop(BOTAO_ESPACO).row();
+        tabela.add(btnNovoJogo).size(BOTAO_LARGURA, BOTAO_ALTURA).left().row();
+        tabela.add(btnLevels).size(BOTAO_LARGURA, BOTAO_ALTURA).left().padTop(BOTAO_ESPACO).row();
+        tabela.add(btnSair).size(BOTAO_LARGURA, BOTAO_ALTURA).left().padTop(BOTAO_ESPACO).row();
 
         stage.addActor(tabela);
     }
@@ -134,9 +117,8 @@ public class MenuPrincipal implements Screen {
     private void adicionarListeners(TextButton botao, final int indice) {
         botao.addListener(new ClickListener() {
             @Override
-            public void enter(InputEvent event, float x, float y, int pointer,
-                              com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                if (pointer == -1) {
+            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                if (pointer == -1 && !trocandoTela) {
                     indiceSelecionado = indice;
                     atualizarFoco();
                 }
@@ -144,29 +126,41 @@ public class MenuPrincipal implements Screen {
 
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                executarAcao(indice);
+                if (!trocandoTela) {
+                    executarAcao(indice);
+                }
             }
         });
     }
 
     private void atualizarFoco() {
         for (int i = 0; i < botoes.size; i++) {
-            botoes.get(i).getLabel().setColor(i == indiceSelecionado ? Color.YELLOW : Color.WHITE);
+            botoes.get(i)
+                    .getLabel()
+                    .setColor(i == indiceSelecionado ? Color.YELLOW : Color.WHITE);
         }
     }
 
     private void executarAcao(int indice) {
+        if (trocandoTela) return;
+
         switch (indice) {
-            case 0: // Novo Jogo
+            case 0: // Novo Jogo (Vai direto para Fase1)
                 if (jogo != null) {
+                    trocandoTela = true;
+                    Gdx.input.setInputProcessor(null);
                     jogo.setScreen(new Fase1(jogo));
                 }
                 break;
-            case 1: // Continuar (sem save ainda)
+
+            case 1: // Levels (Agora vai para a tela Levels!)
                 if (jogo != null) {
-                    jogo.setScreen(new Fase1(jogo));
+                    trocandoTela = true;
+                    Gdx.input.setInputProcessor(null);
+                    jogo.setScreen(new Levels(jogo)); // <--- AQUI ESTÁ A CORREÇÃO
                 }
                 break;
+
             case 2: // Sair
                 Gdx.app.exit();
                 break;
@@ -182,6 +176,8 @@ public class MenuPrincipal implements Screen {
         return new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
+                if (trocandoTela) return false;
+
                 switch (keycode) {
                     case Keys.DOWN:
                         if (indiceSelecionado < botoes.size - 1) {
@@ -189,12 +185,14 @@ public class MenuPrincipal implements Screen {
                             atualizarFoco();
                         }
                         return true;
+
                     case Keys.UP:
                         if (indiceSelecionado > 0) {
                             indiceSelecionado--;
                             atualizarFoco();
                         }
                         return true;
+
                     case Keys.ENTER:
                     case Keys.SPACE:
                         executarAcao(indiceSelecionado);
@@ -205,22 +203,22 @@ public class MenuPrincipal implements Screen {
         };
     }
 
-    // -----------------------------------------------------------------------
-    // Render / resize / dispose
-    // -----------------------------------------------------------------------
-
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
-        viewport.apply();
 
+        viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
+
         batch.begin();
         batch.draw(texFundo, 0, 0, MUNDO_LARGURA, MUNDO_ALTURA);
         batch.end();
 
-        stage.act(delta);
-        stage.draw();
+        // Só atualiza o Stage se não estivermos no meio da transição
+        if (!trocandoTela) {
+            stage.act(delta);
+            stage.draw();
+        }
     }
 
     @Override
@@ -228,8 +226,11 @@ public class MenuPrincipal implements Screen {
         viewport.update(width, height, true);
     }
 
-    @Override public void pause()  { }
-    @Override public void resume() { }
+    @Override
+    public void pause() { }
+
+    @Override
+    public void resume() { }
 
     @Override
     public void hide() {
