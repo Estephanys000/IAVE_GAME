@@ -2,6 +2,7 @@ package br.mackenzie;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
@@ -16,15 +17,23 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-
 public class Fase3 extends ScreenAdapter {
 
     private final Main jogo;
 
-    private enum GameState { WAITING, PLAYING, GAME_OVER, WIN }
+    private enum GameState {
+        WAITING,
+        PLAYING,
+        PAUSED,
+        GAME_OVER,
+        WIN
+    }
 
     private static final int MAX_LIVES = 6;
-    public static final float LEFT_WALL  = 1.5f;
+    private static final int SCORE_VITORIA = 50;
+    private static final float VELOCIDADE_FASE3 = 4.0f;
+
+    public static final float LEFT_WALL = 1.5f;
     public static final float RIGHT_WALL = 6.5f;
 
     private GameState gameState = GameState.WAITING;
@@ -35,13 +44,19 @@ public class Fase3 extends ScreenAdapter {
 
     private Texture playerTex, playerLeftTex, playerRightTex;
     private Texture bgNearTex;
-    private Texture inimigo1Tex, inimigo2Tex, inimigo3Tex;
+
+    private Texture coletavel1Tex, coletavel2Tex, coletavel3Tex;
+    private Texture obstaculo1Tex, obstaculo2Tex;
+
     private Texture powerTex;
     private Texture shieldTex;
-    private Texture startGameTex, gameOverTex, heartTex;
+    private Texture startGameTex, gameOverTex, heartTex, winTex;
+    private Texture pauseTex;
 
     private PlayerShip player;
-    private Array<coletaveis> enemies;
+
+    private Array<coletaveis> coletaveisList;
+    private Array<Obstaculo> obstaculos;
     private Array<PowerUp> activePowerUps;
     private Array<Shield> activeShields;
 
@@ -53,8 +68,10 @@ public class Fase3 extends ScreenAdapter {
     private Sound dropSound;
     private Music music;
     private BitmapFont font;
+    private BitmapFont pauseFont;
 
     private int screenW, screenH;
+    private int pauseOption = 0; // 0 = Play, 1 = Menu, 2 = Sair
 
     public Fase3(Main jogo) {
         this.jogo = jogo;
@@ -62,114 +79,311 @@ public class Fase3 extends ScreenAdapter {
 
     @Override
     public void show() {
-        try {
-            spriteBatch = new SpriteBatch();
-            viewport    = new FitViewport(8, 5);
+        Gdx.input.setInputProcessor(null);
 
-            screenW = Gdx.graphics.getWidth();
-            screenH = Gdx.graphics.getHeight();
+        spriteBatch = new SpriteBatch();
+        viewport = new FitViewport(8, 5);
 
-            hudCamera = new OrthographicCamera();
-            hudCamera.setToOrtho(false, screenW, screenH);
+        screenW = Gdx.graphics.getWidth();
+        screenH = Gdx.graphics.getHeight();
 
-            playerTex      = new Texture("player.png");
-            playerLeftTex  = new Texture("player_left.png");
-            playerRightTex = new Texture("player_right.png");
+        hudCamera = new OrthographicCamera();
+        hudCamera.setToOrtho(false, screenW, screenH);
 
-            bgNearTex   = new Texture("background_fase3.png");
-            inimigo1Tex = new Texture("inimigo_pequeno.png");
-            inimigo2Tex = new Texture("inimigo_grande.png");
-            inimigo3Tex = new Texture("inimigo3.png");
-            powerTex    = new Texture("drop.png");
-            shieldTex   = new Texture("shield.png");
+        playerTex = new Texture("player.png");
+        playerLeftTex = new Texture("player_left.png");
+        playerRightTex = new Texture("player_right.png");
 
-            startGameTex = new Texture("start_game.png");
-            gameOverTex  = new Texture("game_over.png");
-            heartTex     = new Texture("heart.png");
+        bgNearTex = new Texture("background_fase3.png");
 
-            font = new BitmapFont(Gdx.files.internal("pixel_font.fnt"));
-            font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        coletavel1Tex = new Texture("coletavel1.png");
+        coletavel2Tex = new Texture("coletavel2.png");
+        coletavel3Tex = new Texture("coletavel3.png");
 
-            dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.mp3"));
-            music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
+        obstaculo1Tex = new Texture("obstaculo1.png");
+        obstaculo2Tex = new Texture("obstaculo2.png");
 
-            music.setLooping(true);
-            music.play();
+        powerTex = new Texture("drop.png");
+        shieldTex = new Texture("shield.png");
 
-            initGame();
-        } catch (Exception e) {
-            Gdx.app.error("ERRO_FASE3", "Falha ao carregar assets.");
-            e.printStackTrace();
-            Gdx.app.exit();
-        }
+        startGameTex = new Texture("start_game.png");
+        gameOverTex = new Texture("game_over.png");
+        heartTex = new Texture("heart.png");
+        winTex = new Texture("win.png");
+        pauseTex = new Texture("pause.png");
+
+        font = new BitmapFont(Gdx.files.internal("pixel_font.fnt"));
+        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        pauseFont = new BitmapFont();
+        pauseFont.getData().setScale(3.0f);
+        pauseFont.setColor(Color.WHITE);
+
+        dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.mp3"));
+
+        music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
+        music.setLooping(true);
+        music.play();
+
+        initGame();
     }
 
     private void initGame() {
         player = new PlayerShip(playerTex, playerLeftTex, playerRightTex, 3.5f, 0.2f);
-        enemies        = new Array<>();
+
+        coletaveisList = new Array<>();
+        obstaculos = new Array<>();
         activePowerUps = new Array<>();
-        activeShields  = new Array<>();
+        activeShields = new Array<>();
+
         spawnTimer = 0;
-        score      = 0;
+        score = 0;
         lives = MAX_LIVES;
-        bgNearY    = 0f;
+        bgNearY = 0f;
+        pauseOption = 0;
     }
 
     @Override
     public void render(float delta) {
         switch (gameState) {
             case WAITING:
-                if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))
+                if (pressedAny(Input.Keys.SPACE, Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER)) {
                     gameState = GameState.PLAYING;
+                }
                 break;
+
             case PLAYING:
+                if (pressedAny(Input.Keys.ESCAPE, Input.Keys.P)) {
+                    pauseGame();
+                    break;
+                }
+
                 updateParallax(delta);
                 player.update(delta);
                 spawnObjects(delta);
                 updateGameObjects(delta);
+
+                if (score >= SCORE_VITORIA) {
+                    gameState = GameState.WIN;
+                }
                 break;
+
+            case PAUSED:
+                updatePauseInput();
+                break;
+
             case GAME_OVER:
-                if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                if (pressedAny(Input.Keys.SPACE, Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER)) {
                     initGame();
                     gameState = GameState.WAITING;
                 }
                 break;
 
             case WIN:
-                if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                    Gdx.input.setInputProcessor(null);
-                    this.dispose();
-                    jogo.setScreen(new MenuPrincipal(jogo));
+                if (pressedAny(Input.Keys.SPACE, Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER, Input.Keys.ESCAPE)) {
+                    voltarParaMenu();
+                    return;
                 }
                 break;
         }
 
+        drawGame();
+    }
+
+    private boolean pressedAny(int... keys) {
+        for (int key : keys) {
+            if (Gdx.input.isKeyJustPressed(key)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void drawGame() {
         ScreenUtils.clear(Color.BLACK);
+
         viewport.apply();
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
 
         spriteBatch.begin();
-        spriteBatch.draw(bgNearTex, 0, bgNearY,       8, 5);
-        spriteBatch.draw(bgNearTex, 0, bgNearY + 5f,  8, 5);
+
+        spriteBatch.draw(bgNearTex, 0, bgNearY, 8, 5);
+        spriteBatch.draw(bgNearTex, 0, bgNearY + 5f, 8, 5);
 
         if (gameState != GameState.WAITING) {
-            for (coletaveis e  : enemies)        e.draw(spriteBatch);
-            for (PowerUp  p  : activePowerUps) p.draw(spriteBatch);
-            for (Shield   s  : activeShields)  s.draw(spriteBatch);
+            for (coletaveis c : coletaveisList) {
+                c.draw(spriteBatch);
+            }
+
+            for (Obstaculo o : obstaculos) {
+                o.draw(spriteBatch);
+            }
+
+            for (PowerUp p : activePowerUps) {
+                p.draw(spriteBatch);
+            }
+
+            for (Shield s : activeShields) {
+                s.draw(spriteBatch);
+            }
+
             player.draw(spriteBatch);
         }
+
         spriteBatch.end();
 
         hudCamera.update();
         spriteBatch.setProjectionMatrix(hudCamera.combined);
+
         spriteBatch.begin();
         drawHUD();
         spriteBatch.end();
     }
 
+    private void pauseGame() {
+        gameState = GameState.PAUSED;
+        pauseOption = 0;
+
+        if (music != null) {
+            music.pause();
+        }
+    }
+
+    private void resumeGame() {
+        gameState = GameState.PLAYING;
+
+        if (music != null) {
+            music.play();
+        }
+    }
+
+    private void updatePauseInput() {
+        if (pressedAny(Input.Keys.ESCAPE, Input.Keys.P)) {
+            resumeGame();
+            return;
+        }
+
+        if (pressedAny(Input.Keys.UP, Input.Keys.W, Input.Keys.LEFT, Input.Keys.A)) {
+            movePauseOptionUp();
+            return;
+        }
+
+        if (pressedAny(Input.Keys.DOWN, Input.Keys.S, Input.Keys.RIGHT, Input.Keys.D)) {
+            movePauseOptionDown();
+            return;
+        }
+
+        if (pressedAny(Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER, Input.Keys.SPACE)) {
+            executePauseOption();
+            return;
+        }
+
+        if (Gdx.input.justTouched()) {
+            handlePauseMouseClick();
+        }
+    }
+
+    private void movePauseOptionUp() {
+        pauseOption--;
+
+        if (pauseOption < 0) {
+            pauseOption = 2;
+        }
+    }
+
+    private void movePauseOptionDown() {
+        pauseOption++;
+
+        if (pauseOption > 2) {
+            pauseOption = 0;
+        }
+    }
+
+    private void handlePauseMouseClick() {
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenH - Gdx.input.getY();
+
+        float pauseAspectRatio = (float) pauseTex.getWidth() / pauseTex.getHeight();
+
+        float imgH = screenH * 0.60f;
+        float imgW = imgH * pauseAspectRatio;
+
+        float maxW = screenW * 0.90f;
+        if (imgW > maxW) {
+            imgW = maxW;
+            imgH = imgW / pauseAspectRatio;
+        }
+
+        float imgX = (screenW - imgW) / 2f;
+        float imgY = (screenH - imgH) / 2f;
+
+        float buttonX = imgX + imgW * 0.18f;
+        float buttonW = imgW * 0.64f;
+        float buttonH = imgH * 0.12f;
+
+        float playY = imgY + imgH * 0.485f;
+        float menuY = imgY + imgH * 0.345f;
+        float sairY = imgY + imgH * 0.205f;
+
+        if (isMouseInside(mouseX, mouseY, buttonX, playY, buttonW, buttonH)) {
+            pauseOption = 0;
+            executePauseOption();
+            return;
+        }
+
+        if (isMouseInside(mouseX, mouseY, buttonX, menuY, buttonW, buttonH)) {
+            pauseOption = 1;
+            executePauseOption();
+            return;
+        }
+
+        if (isMouseInside(mouseX, mouseY, buttonX, sairY, buttonW, buttonH)) {
+            pauseOption = 2;
+            executePauseOption();
+        }
+    }
+
+    private boolean isMouseInside(float mouseX, float mouseY, float x, float y, float w, float h) {
+        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+    }
+
+    private void executePauseOption() {
+        switch (pauseOption) {
+            case 0:
+                resumeGame();
+                break;
+
+            case 1:
+                voltarParaMenu();
+                break;
+
+            case 2:
+                Gdx.app.exit();
+                break;
+        }
+    }
+    private void voltarParaMenu() {
+        if (music != null) {
+            music.stop();
+        }
+
+        Gdx.input.setInputProcessor(null);
+
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                jogo.setScreen(new MenuPrincipal(jogo));
+            }
+        });
+    }
+
     private void updateParallax(float delta) {
-        bgNearY -= 2.0f * delta;
-        if (bgNearY <= -5f) bgNearY += 5f;
+        bgNearY -= VELOCIDADE_FASE3 * delta;
+
+        if (bgNearY <= -5f) {
+            bgNearY += 5f;
+        }
     }
 
     private void drawHUD() {
@@ -182,16 +396,63 @@ public class Fase3 extends ScreenAdapter {
             case WAITING:
                 spriteBatch.draw(startGameTex, imgX, imgY, imgW, imgH);
                 break;
+
             case PLAYING:
                 drawScore();
                 drawLiveHearts();
                 break;
+
+            case PAUSED:
+                drawScore();
+                drawLiveHearts();
+                drawPauseMenu();
+                break;
+
             case GAME_OVER:
                 drawScore();
                 drawLiveHearts();
                 spriteBatch.draw(gameOverTex, imgX, imgY, imgW, imgH);
                 break;
+
+            case WIN:
+                drawScore();
+                drawLiveHearts();
+                spriteBatch.draw(winTex, imgX, imgY, imgW, imgH);
+                break;
         }
+    }
+
+    private void drawPauseMenu() {
+        float pauseAspectRatio = (float) pauseTex.getWidth() / pauseTex.getHeight();
+
+        float imgH = screenH * 0.60f;
+        float imgW = imgH * pauseAspectRatio;
+
+        float maxW = screenW * 0.90f;
+        if (imgW > maxW) {
+            imgW = maxW;
+            imgH = imgW / pauseAspectRatio;
+        }
+
+        float imgX = (screenW - imgW) / 2f;
+        float imgY = (screenH - imgH) / 2f;
+
+        spriteBatch.draw(pauseTex, imgX, imgY, imgW, imgH);
+
+        float arrowX = imgX + imgW * 0.10f;
+        float arrowY;
+
+        if (pauseOption == 0) {
+            arrowY = imgY + imgH * 0.52f;
+        } else if (pauseOption == 1) {
+            arrowY = imgY + imgH * 0.38f;
+        } else {
+            arrowY = imgY + imgH * 0.24f;
+        }
+
+        pauseFont.getData().setScale(3.0f);
+        pauseFont.setColor(Color.WHITE);
+        pauseFont.draw(spriteBatch, ">", arrowX, arrowY);
     }
 
     private void drawScore() {
@@ -203,73 +464,122 @@ public class Fase3 extends ScreenAdapter {
 
     private void drawLiveHearts() {
         float heartSize = 60f;
-        float margin    = 10f;
-        float startX    = screenW - (lives * (heartSize + margin)) - 10;
-        float y         = screenH - heartSize - 10;
-        for (int i = 0; i < lives; i++)
+        float margin = 10f;
+        float startX = screenW - (lives * (heartSize + margin)) - 20;
+        float y = screenH - heartSize - 10;
+
+        for (int i = 0; i < lives; i++) {
             spriteBatch.draw(heartTex, startX + i * (heartSize + margin), y, heartSize, heartSize);
+        }
     }
 
     private void spawnObjects(float delta) {
         spawnTimer += delta;
 
-        // FASE 3: Chuva de inimigos (Surgem a cada 0.5 segundos)
-        if (spawnTimer < 0.5f) return;
+        if (spawnTimer < 0.7f) {
+            return;
+        }
+
         spawnTimer = 0;
 
-        float x    = MathUtils.random(LEFT_WALL, RIGHT_WALL - 1.0f);
+        float x = MathUtils.random(LEFT_WALL, RIGHT_WALL - 1.0f);
         float roll = MathUtils.random();
 
-        // FASE 3: Inimigos muito menores e super rápidos (-5.5f de velocidade Y)
-        if (roll < 0.5f) {
-            enemies.add(new coletaveis(inimigo1Tex, x, 5f, 0.4f, 0, -4.0f));
-        } else if (roll < 0.8f) {
-            enemies.add(new coletaveis(inimigo2Tex,  x, 5f, 0.35f, 0, -4.0f));
+        if (roll < 0.55f) {
+            spawnColetavel(x);
         } else {
-            enemies.add(new coletaveis(inimigo3Tex,   x, 5f, 0.5f, 0, -4.0f));
+            spawnObstaculo(x);
         }
 
-        if (MathUtils.randomBoolean(0.1f)) {
+        if (MathUtils.randomBoolean(0.08f)) {
             float px = MathUtils.random(LEFT_WALL, RIGHT_WALL - 0.8f);
-            activePowerUps.add(new PowerUp(powerTex, px, 5f));
+            activePowerUps.add(new Fase3PowerUp(powerTex, px, 5f));
         }
-        if (MathUtils.randomBoolean(0.01f)) {
+
+        if (MathUtils.randomBoolean(0.012f)) {
             float sx = MathUtils.random(LEFT_WALL, RIGHT_WALL - 0.8f);
-            activeShields.add(new Shield(shieldTex, sx, 5f));
+            activeShields.add(new Fase3Shield(shieldTex, sx, 5f));
+        }
+    }
+
+    private void spawnColetavel(float x) {
+        float roll = MathUtils.random();
+
+        if (roll < 0.5f) {
+            coletaveisList.add(new coletaveis(coletavel1Tex, x, 5f, 0.8f, 0, -VELOCIDADE_FASE3));
+        } else if (roll < 0.8f) {
+            coletaveisList.add(new coletaveis(coletavel2Tex, x, 5f, 0.5f, 0, -VELOCIDADE_FASE3));
+        } else {
+            coletaveisList.add(new coletaveis(coletavel3Tex, x, 5f, 0.65f, 0, -VELOCIDADE_FASE3));
+        }
+    }
+
+    private void spawnObstaculo(float x) {
+        if (MathUtils.randomBoolean()) {
+            obstaculos.add(new Obstaculo(obstaculo1Tex, x, 5f, 0.8f, 0, -VELOCIDADE_FASE3));
+        } else {
+            obstaculos.add(new Obstaculo(obstaculo2Tex, x, 5f, 0.9f, 0, -VELOCIDADE_FASE3));
         }
     }
 
     private void updateGameObjects(float delta) {
         Rectangle playerBounds = player.getBounds();
 
-        for (int i = enemies.size - 1; i >= 0; i--) {
-            coletaveis e = enemies.get(i);
-            e.update(delta);
-            Rectangle eb = e.getBounds();
+        for (int i = coletaveisList.size - 1; i >= 0; i--) {
+            coletaveis c = coletaveisList.get(i);
+            c.update(delta);
 
-            if (!player.isInvincible() && eb.overlaps(playerBounds)) {
+            Rectangle cb = c.getBounds();
+
+            if (cb.overlaps(playerBounds)) {
                 score++;
                 dropSound.play();
-                enemies.removeIndex(i);
+                coletaveisList.removeIndex(i);
                 continue;
             }
 
-            if (eb.y < -1f) {
-                lives--;
-                player.hit();
-                enemies.removeIndex(i);
-                if (lives <= 0) gameState = GameState.GAME_OVER;
+            if (cb.y < -1f) {
+                coletaveisList.removeIndex(i);
+            }
+        }
+
+        for (int i = obstaculos.size - 1; i >= 0; i--) {
+            Obstaculo o = obstaculos.get(i);
+            o.update(delta);
+
+            Rectangle ob = o.getBounds();
+
+            if (ob.overlaps(playerBounds)) {
+                obstaculos.removeIndex(i);
+
+                if (!player.isInvincible()) {
+                    lives--;
+                    player.hit();
+
+                    if (lives <= 0) {
+                        gameState = GameState.GAME_OVER;
+                    }
+                }
+
+                continue;
+            }
+
+            if (ob.y < -1f) {
+                obstaculos.removeIndex(i);
             }
         }
 
         for (int i = activePowerUps.size - 1; i >= 0; i--) {
             PowerUp p = activePowerUps.get(i);
             p.update(delta);
-            if (p.getBounds().overlaps(playerBounds)) {
+
+            Rectangle pb = p.getBounds();
+
+            if (pb.overlaps(playerBounds)) {
                 dropSound.play();
                 lives = Math.min(lives + 1, MAX_LIVES);
                 activePowerUps.removeIndex(i);
-            } else if (p.getBounds().y < -1f) {
+            } else if (pb.y < -1f) {
                 activePowerUps.removeIndex(i);
             }
         }
@@ -277,41 +587,100 @@ public class Fase3 extends ScreenAdapter {
         for (int i = activeShields.size - 1; i >= 0; i--) {
             Shield s = activeShields.get(i);
             s.update(delta);
-            if (s.getBounds().overlaps(playerBounds)) {
+
+            Rectangle sb = s.getBounds();
+
+            if (sb.overlaps(playerBounds)) {
                 dropSound.play();
                 player.activateShield();
                 activeShields.removeIndex(i);
-            } else if (s.getBounds().y < -1f) {
+            } else if (sb.y < -1f) {
                 activeShields.removeIndex(i);
             }
         }
     }
 
+    private void trocarTela(Screen novaTela) {
+        if (music != null) {
+            music.stop();
+        }
+
+        Gdx.input.setInputProcessor(null);
+
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                jogo.setScreen(novaTela);
+            }
+        });
+    }
+
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+
         screenW = width;
         screenH = height;
+
         hudCamera.setToOrtho(false, width, height);
+    }
+
+    @Override
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
     }
 
     @Override
     public void dispose() {
         if (spriteBatch != null) spriteBatch.dispose();
+
         if (playerTex != null) playerTex.dispose();
         if (playerLeftTex != null) playerLeftTex.dispose();
         if (playerRightTex != null) playerRightTex.dispose();
+
         if (bgNearTex != null) bgNearTex.dispose();
-        if (inimigo1Tex != null) inimigo1Tex.dispose();
-        if (inimigo2Tex != null) inimigo2Tex.dispose();
-        if (inimigo3Tex != null) inimigo3Tex.dispose();
+
+        if (coletavel1Tex != null) coletavel1Tex.dispose();
+        if (coletavel2Tex != null) coletavel2Tex.dispose();
+        if (coletavel3Tex != null) coletavel3Tex.dispose();
+
+        if (obstaculo1Tex != null) obstaculo1Tex.dispose();
+        if (obstaculo2Tex != null) obstaculo2Tex.dispose();
+
         if (powerTex != null) powerTex.dispose();
         if (shieldTex != null) shieldTex.dispose();
+
         if (startGameTex != null) startGameTex.dispose();
         if (gameOverTex != null) gameOverTex.dispose();
         if (heartTex != null) heartTex.dispose();
+        if (winTex != null) winTex.dispose();
+        if (pauseTex != null) pauseTex.dispose();
+
         if (dropSound != null) dropSound.dispose();
         if (music != null) music.dispose();
         if (font != null) font.dispose();
+        if (pauseFont != null) pauseFont.dispose();
+    }
+
+    private static class Fase3PowerUp extends PowerUp {
+        public Fase3PowerUp(Texture texture, float x, float y) {
+            super(texture, x, y);
+        }
+
+        @Override
+        public void update(float delta) {
+            sprite.translateY(-VELOCIDADE_FASE3 * delta);
+        }
+    }
+
+    private static class Fase3Shield extends Shield {
+        public Fase3Shield(Texture texture, float x, float y) {
+            super(texture, x, y);
+        }
+
+        @Override
+        public void update(float delta) {
+            sprite.translateY(-VELOCIDADE_FASE3 * delta);
+        }
     }
 }
