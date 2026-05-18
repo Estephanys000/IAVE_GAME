@@ -9,11 +9,9 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -46,7 +44,7 @@ public class Fase2 extends ScreenAdapter {
     private Texture startGameTex, gameOverTex, heartTex, winTex; // CORRIGIDO: winTex adicionado
 
     private PlayerShip player;
-    private Array<inimigo3> enemies;
+    private Array<coletaveis> enemies;
     private Array<PowerUp> activePowerUps;
     private Array<Shield> activeShields;
 
@@ -167,7 +165,7 @@ public class Fase2 extends ScreenAdapter {
         spriteBatch.draw(bgNearTex, 0, bgNearY + 5f, 8, 5);
 
         if (gameState != GameState.WAITING) {
-            for (inimigo3 e : enemies) e.draw(spriteBatch);
+            for (coletaveis e : enemies) e.draw(spriteBatch);
             for (PowerUp p : activePowerUps) p.draw(spriteBatch);
             for (Shield s : activeShields) s.draw(spriteBatch);
             player.draw(spriteBatch);
@@ -243,11 +241,11 @@ public class Fase2 extends ScreenAdapter {
         float roll = MathUtils.random();
 
         if (roll < 0.5f) {
-            enemies.add(new inimigo3(inimigo1Tex, x, 5f, 0.6f, 0, -VELOCIDADE_FASE2));
+            enemies.add(new coletaveis(inimigo1Tex, x, 5f, 0.6f, 0, -VELOCIDADE_FASE2));
         } else if (roll < 0.8f) {
-            enemies.add(new inimigo3(inimigo2Tex, x, 5f, 0.5f, 0, -VELOCIDADE_FASE2));
+            enemies.add(new coletaveis(inimigo2Tex, x, 5f, 0.5f, 0, -VELOCIDADE_FASE2));
         } else {
-            enemies.add(new inimigo3(inimigo3Tex, x, 5f, 0.8f, 0, -VELOCIDADE_FASE2));
+            enemies.add(new coletaveis(inimigo3Tex, x, 5f, 0.8f, 0, -VELOCIDADE_FASE2));
         }
 
         if (MathUtils.randomBoolean(0.1f)) {
@@ -264,7 +262,7 @@ public class Fase2 extends ScreenAdapter {
         Rectangle playerBounds = player.getBounds();
 
         for (int i = enemies.size - 1; i >= 0; i--) {
-            inimigo3 e = enemies.get(i);
+            coletaveis e = enemies.get(i);
             e.update(delta);
             Rectangle eb = e.getBounds();
 

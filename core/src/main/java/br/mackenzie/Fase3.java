@@ -41,7 +41,7 @@ public class Fase3 extends ScreenAdapter {
     private Texture startGameTex, gameOverTex, heartTex;
 
     private PlayerShip player;
-    private Array<inimigo3> enemies;
+    private Array<coletaveis> enemies;
     private Array<PowerUp> activePowerUps;
     private Array<Shield> activeShields;
 
@@ -153,7 +153,7 @@ public class Fase3 extends ScreenAdapter {
         spriteBatch.draw(bgNearTex, 0, bgNearY + 5f,  8, 5);
 
         if (gameState != GameState.WAITING) {
-            for (inimigo3 e  : enemies)        e.draw(spriteBatch);
+            for (coletaveis e  : enemies)        e.draw(spriteBatch);
             for (PowerUp  p  : activePowerUps) p.draw(spriteBatch);
             for (Shield   s  : activeShields)  s.draw(spriteBatch);
             player.draw(spriteBatch);
@@ -222,11 +222,11 @@ public class Fase3 extends ScreenAdapter {
 
         // FASE 3: Inimigos muito menores e super rápidos (-5.5f de velocidade Y)
         if (roll < 0.5f) {
-            enemies.add(new inimigo3(inimigo1Tex, x, 5f, 0.4f, 0, -4.0f));
+            enemies.add(new coletaveis(inimigo1Tex, x, 5f, 0.4f, 0, -4.0f));
         } else if (roll < 0.8f) {
-            enemies.add(new inimigo3(inimigo2Tex,  x, 5f, 0.35f, 0, -4.0f));
+            enemies.add(new coletaveis(inimigo2Tex,  x, 5f, 0.35f, 0, -4.0f));
         } else {
-            enemies.add(new inimigo3(inimigo3Tex,   x, 5f, 0.5f, 0, -4.0f));
+            enemies.add(new coletaveis(inimigo3Tex,   x, 5f, 0.5f, 0, -4.0f));
         }
 
         if (MathUtils.randomBoolean(0.1f)) {
@@ -243,7 +243,7 @@ public class Fase3 extends ScreenAdapter {
         Rectangle playerBounds = player.getBounds();
 
         for (int i = enemies.size - 1; i >= 0; i--) {
-            inimigo3 e = enemies.get(i);
+            coletaveis e = enemies.get(i);
             e.update(delta);
             Rectangle eb = e.getBounds();
 

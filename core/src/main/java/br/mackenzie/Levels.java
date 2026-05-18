@@ -142,10 +142,10 @@ public class Levels extends ScreenAdapter {
         }
 
         float y = MUNDO_ALTURA * 0.17f;
-        float brilho = 0.85f + (float) Math.sin(tempo * 6f) * 0.15f;
+        float brilho = 0.5f + (float) Math.sin(tempo * 15f) * 0.5f;
 
-        fonte.setColor(1f, brilho, 0f, 1f);
-        fonte.draw(batch, "X", x, y);
+        fonte.setColor(brilho, 1f, brilho, 1f);
+        fonte.draw(batch, "^", x - 45, y - 75f);
     }
 
     @Override
