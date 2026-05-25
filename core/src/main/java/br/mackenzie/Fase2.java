@@ -379,7 +379,7 @@ public class Fase2 extends ScreenAdapter {
     private void irParaTelaFinal() {
         if (music != null) music.stop();
         Gdx.input.setInputProcessor(null);
-        jogo.setScreen(new TelaFinal(jogo, score, tempoJogo));
+        jogo.setScreen(new TelaFinal(jogo, score, SCORE_VITORIA, tempoJogo));
     }
 
     private void updateParallax(float delta) {

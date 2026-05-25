@@ -591,7 +591,7 @@ public class Fase1 extends ScreenAdapter {
     private void irParaTelaFinal() {
         if (music != null) music.stop();
         Gdx.input.setInputProcessor(null);
-        jogo.setScreen(new TelaFinal(jogo, score, tempoJogo));
+        jogo.setScreen(new TelaFinal(jogo, score, SCORE_VITORIA, tempoJogo));
     }
 
     @Override
@@ -627,10 +627,6 @@ public class Fase1 extends ScreenAdapter {
         if (gerenciadorInput != null) gerenciadorInput.dispose();
     }
 }
-
-// ========================================================
-// CLASSES BASE E ENTIDADES
-// ========================================================
 
 abstract class GameObject {
     protected Sprite sprite;

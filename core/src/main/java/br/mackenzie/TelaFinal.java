@@ -21,6 +21,7 @@ public class TelaFinal implements Screen {
     private final Main jogo;
     private final SpriteBatch batch;
     private final int score;
+    private final int scoreMaximo;
     private final float tempoTotal;
     private final String classificacao;
     private final Color cor;
@@ -31,19 +32,22 @@ public class TelaFinal implements Screen {
     private Texture painel;
     private BitmapFont font;
 
-    public TelaFinal(Main jogo, int score, float tempoTotal) {
+    public TelaFinal(Main jogo, int score, int scoreMaximo, float tempoTotal) {
         this.jogo = jogo;
         this.batch = jogo.batch;
         this.score = score;
+        this.scoreMaximo = scoreMaximo;
         this.tempoTotal = tempoTotal;
 
-        if (score >= 70) {
+        float porcentagem = (scoreMaximo > 0) ? (score * 100f / scoreMaximo) : 0;
+
+        if (porcentagem >= 100) {
             classificacao = "PLATINA";
             cor = new Color(0.6f, 0.9f, 1f, 1f);
-        } else if (score >= 50) {
+        } else if (porcentagem >= 75) {
             classificacao = "OURO";
             cor = Color.GOLD;
-        } else if (score >= 30) {
+        } else if (porcentagem >= 50) {
             classificacao = "PRATA";
             cor = Color.LIGHT_GRAY;
         } else {
@@ -80,7 +84,7 @@ public class TelaFinal implements Screen {
         font.getData().setScale(1.5f);
         font.setColor(Color.WHITE);
         font.draw(batch, "Classificacao: " + classificacao, 200, 500);
-        font.draw(batch, "Score: " + score, 200, 450);
+        font.draw(batch, "Score: " + score + " / " + scoreMaximo, 200, 450);
         font.draw(batch, "Tempo: " + String.format("%.1f", tempoTotal) + "s", 200, 400);
 
         font.getData().setScale(1f);
